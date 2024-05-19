@@ -110,9 +110,32 @@ Kubernetes предоставляет несколько встроенных т
 
 Вы можете определить и использовать ваш собственный тип [[Secret]] назначив не пустую строку как значение `type` для объекта [[Secret]] (пустая строка будет обработана как тип `Opaque`). 
 
+Kubernetes не навязывает какие-либо ограничения на имя типа. Однако, если вы используете один из встроенных типов, вы должны соответствовать всем требованиям, определенным для этого типа.
 
+Если вы определяете тип [[Secret]], который будет доступен для публичного использования, следуйте соглашению и структурируйте тип [[Secret]] таким образом, что бы перед именем типа было ваше доменное имея , разделенное `/`. Для примера: `cloud-hosting-example.net/cloud-api-credentioals`.
 ### Opaque Secrets
-### ServiceAccount token Secrets
+
+`Opaque` стандартный тип [[Secret]] если вы явно не указали тип в [[Secret]] манифесте. Когда вы создаете [[Secret]] используя `kubectl`, вы должны использовать подкоманду `generic` для  обозначения `Opaque` типа. Для примера, следующая команда создает пустой [[Secret]] типа `Opaque`:
+
+```shell
+kubectl create secret generic empty-secret
+kubectl get secret empty-secret
+```
+
+Вывод выглядит как:
+
+``` shell
+NAME           TYPE     DATA   AGE
+empty-secret   Opaque   0      2m6s
+```
+
+Колонка `DATA` показывает количество элементов данных в [[Secret]]. В этом случае, `0` означает, что вы создали пустой [[Secret]].
+### ServiceAccount токен Secrets
+
+Тип [[Secret]] `kubernetes.io/service-account-token` используется для хранения токена учетных данных идентифицирующий [[Authenticating#Service account tokens|ServiceAccount]]. Это устаревший механизм, который предоставляет долго живущие учетные данные [[Authenticating#Service account tokens|ServiceAccount]] для [[Pod]].
+
+В Kubernetes v1.22 и позднее, рекомендуемый подход - получение короткоживущих, автоматически сменяющийся токен [[Authenticating#Service account tokens|ServiceAccount]] используемый вместо [[TokenRequest]]. Вы можете получить эти короткоживущие токены использующие следующие методы:
+- Вызывает API `TokenRequest` 
 ### Docker config Secrets
 ### Basic authentication Secret
 ### SSH authentication Secrets
