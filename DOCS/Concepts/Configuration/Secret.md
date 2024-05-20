@@ -135,8 +135,57 @@ empty-secret   Opaque   0      2m6s
 Тип [[Secret]] `kubernetes.io/service-account-token` используется для хранения токена учетных данных идентифицирующий [[Authenticating#Service account tokens|ServiceAccount]]. Это устаревший механизм, который предоставляет долго живущие учетные данные [[Authenticating#Service account tokens|ServiceAccount]] для [[Pod]].
 
 В Kubernetes v1.22 и позднее, рекомендуемый подход - получение короткоживущих, автоматически сменяющийся токен [[Authenticating#Service account tokens|ServiceAccount]] используемый вместо [[TokenRequest]]. Вы можете получить эти короткоживущие токены использующие следующие методы:
-- Вызывает API `TokenRequest` 
+- Вызывает API `TokenRequest` напрямую или используя API клиент например как `kubectl`. Для примера: вы можете использовать команду [`kubectl create token`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#-em-token-em-).
+- Запросите смонтированный токен в [[Managing Service Accounts#Bound service account token volume mechanism|projected volume]] вашего [[Pod]] манифеста. Kubernetes создает токен и монтирует его в [[Pod]]. Токен автоматически признается не действительным когда [[Pod]] в который он смонтирован удален. Подробности смотри в [[Configure Service Accounts for Pods#Launch a Pod using service account token projection|Запуск Pod используя  service account token проекцию токена сервисного аккаунта]] 
+
+> [!NOTE]
+> Вы должны создать ServiceAccount токен Secret, только если вы не можете использовать API `TokenRequest` для получения токена и угрозы безопасности, связанной с сохранением учетных данных токена, срок действия которых не истекает в API объекте доступном вам для чтения.
+
+Когда вы используете тип [[Secret]], вам необходимо убедиться что аннотация `kubernetes.io/service-account.name` установлена на существующее имя [[Authenticating#Service account tokens|ServiceAccount]]. Если вы создаете и [[Authenticating#Service account tokens|ServiceAccount]] и [[Secret]] объекты, вы должны создать первым объектом [[Authenticating#Service account tokens|ServiceAccount]]. 
+
+После создания [[Secret]], Kubernetes [[Controllers|контроллер]] заполнит некоторые другие поля аннотацией `kubernetes.io/service-account.uid` и `token` ключ в поле `data`, который заполняется токеном аутентификации.
+
+Для следующем примере конфигурация заявляет [[Authenticating#Service account tokens|ServiceAccount]] токен в [[Secret]]
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret-sa-sample
+  annotations:
+    kubernetes.io/service-account.name: "sa-name"
+type: kubernetes.io/service-account-token
+data:
+  extra: YmFyCg==
+```
+
+После создания [[Secret]], дождитесь, пока Kubernetes введет ключ `token` в поле `data`.
+
+Смотрите документацию [[Service Account]] для большей информации о том, как работает [[Service Account]]. Вы так же можете проверить [[Pod]] поля `automountServiceAccountToken` и `serviceAccountName` для информации о том, как ссылаться на учетные данные [[Service Account]] из модулей. 
 ### Docker config Secrets
+
+Если вы создаете [[Secret]] для хранения учетных данных для доступа к реестру образов контейнеров, вы должны использовать один из следующих значений `type` для этого [[Secret]].
+- `kubernetes.io/dockercfg`:  сохраните стерилизованный файл  `~/.dockercfg`, который является устаревшим форматом для настройки командной строки Docker. [[Secret]] поле `data` содержит ключ `.dockercfg` значение которого это контент файла `~/.dockercfg` в закодированном base64 формата.
+- `kubernetes.io/dockerconfigjson`: сохраните стерилизованный JSON, которые следует таким же правилам форматирования как и файл `~/.docker/config.json`, который является новым форматом для `~/.dockercfg`. [[Secret]] поле `data` должно содержать ключ `.dockerconfigjson`, для которого значение является контентом закодированного формата base64  `~/.docker/config.json` файла.
+
+Ниже пример для [[Secret]] типа `kubernetes.io/dockercfg`:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret-dockercfg
+type: kubernetes.io/dockercfg
+data:
+  .dockercfg: |
+    eyJhdXRocyI6eyJodHRwczovL2V4YW1wbGUvdjEvIjp7ImF1dGgiOiJvcGVuc2VzYW1lIn19fQo= 
+```
+
+> [!NOTE]
+> Если вы не хотите выполнять base64 кодировку, вы можете выбрать для использование поле `stringData` вместо `data`.
+
+
+
 ### Basic authentication Secret
 ### SSH authentication Secrets
 ### TLS Secrets
