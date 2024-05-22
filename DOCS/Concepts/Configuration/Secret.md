@@ -184,7 +184,46 @@ data:
 > [!NOTE]
 > Если вы не хотите выполнять base64 кодировку, вы можете выбрать для использование поле `stringData` вместо `data`.
 
+Когда вы создаете Docker конфигурацию используя манифест [[Secret]] , API сервер проверяет будь то ожидаемый существующий ключ поля `data` и проверяет его, если предоставляемое  значение может быть разобрано как корректный JSON. Сервер API не проверяет, действительно ли JSON является файлом конфигурации Docker.
 
+Вы так же можете использовать `kubectl` для создания [[Secret]] доступа к реестру контейнера,  когда у вас нет файла конфигурации Docker:
+
+```shell
+kubectl create secret docker-registry secret-tiger-docker \
+  --docker-email=tiger@acme.example \
+  --docker-username=tiger \
+  --docker-password=pass1234 \
+  --docker-server=my-registry.example:5000
+```
+
+Команда создает [[Secret]] `kubernetes.io/dockerconfigjson` типа.
+
+Для извлечения поля `.data.dockerconfigjson` из этого нового [[Secret]] и декодирования данных:
+
+``` shell
+kubectl get secret secret-tiger-docker -o jsonpath='{.data.*}' | base64 -d
+```
+
+Вывод команды аналогичен следующему JSON документу (который так же является допустимым конфигурационным файлом Docker)
+
+```json
+{
+  "auths": {
+    "my-registry.example:5000": {
+      "username": "tiger",
+      "password": "pass1234",
+      "email": "tiger@acme.example",
+      "auth": "dGlnZXI6cGFzczEyMzQ="
+    }
+  }
+}
+```
+
+> [!CAUTION]
+> Значение `auth` закодировано в base64; это скрытно, но не секретно. Кто угодно может прочитать этот [[Secret]] может узнать токен владельца доступа к реестру.
+> 
+> Рекомендуется использование [[Configure a kubelet image credential provider|поставщиков учетных данных]] для динамического и надежного получения конфиденциальных данных по требованию.
+ 
 
 ### Basic authentication Secret
 ### SSH authentication Secrets
