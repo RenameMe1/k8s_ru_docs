@@ -224,8 +224,31 @@ kubectl get secret secret-tiger-docker -o jsonpath='{.data.*}' | base64 -d
 > 
 > Рекомендуется использование [[Configure a kubelet image credential provider|поставщиков учетных данных]] для динамического и надежного получения конфиденциальных данных по требованию.
  
-
 ### Basic authentication Secret
+
+Тип `kubernetes.io/basic-auth` предоставлен для хранения учетных данных необходимых для базовой аутентификации. При использовании этого типа [[Secret]], поле `data` может должен содержать один из следующих двух ключей:
+- `username`: Имя пользователя для аутентификации
+- `password`: Пароль или токен для аутентификации
+
+Оба значения для выше указанных ключей закодированные base64 строки. Вы можете альтернативно предоставить не кодированные данные используя `stringData` в манифесте [[Secret]].
+
+Следующий манифест это пример [[Secret]] для базовой аутентификации:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret-basic-auth
+type: kubernetes.io/basic-auth
+stringData:
+  username: admin # Обязательное поле для kubernetes.io/basic-auth
+  password: t0p-Secret # Обязательное поле для kubernetes.io/basic-auth
+```
+
+> [!NOTE]
+> Поле `strigData` для [[Secret]] не работает хорошо с применением на стороне сервера
+
+Базовый аутентификационный тип [[Secret]] предоставлен только для удобства. Вы можете создать [[#Opaque Secrets]] для учетных данных используемых в базовой аутентификации. Однако, использование заданного и публичного [[Secret]] типа (`kubernetes.io/basic-auth`) помогает другим людям понимать цель вашего [[Secret]] и устанавливает соглашение какие имена ключей ожидать. Kubernetes API проверяет какие обязательные ключи указаны для этого типа [[Secret]].
 ### SSH authentication Secrets
 ### TLS Secrets
 ### Bootstrap token Secrets
