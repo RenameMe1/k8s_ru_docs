@@ -468,15 +468,29 @@ spec:
 Для инструкции, обратитесь к [[Distribute Credentials Securely Using Secrets#Define a container environment variable with data from a single Secret|Определение переменных окружения контейнера используя данные Secret объекта]].
 
 Важно отметить, что диапазон символов допустимый для имен переменных окружения в [[Pod]] объектах [[Define Environment Variables for a Container#Using environment variables inside of your config|ограничен]]. Если какие-либо ключи не совпадают с правилами, эти ключи не  становятся доступными в вашем контейнер, хотя [[Pod]] объект доступен для запуска.
-
 ### Container image pull Secrets
 
 Если вы хотите извлечь образ контейнера из приватного репозитория, вам нужен способ для [[kubelet]] на каждой [[Nodes]] для аутентификации в этом репозитории. Вы можете настроить Secret объект *получения образа* для чтобы сделать это возможным. Эти Secret объекты настраиваются на уровне [[Pod]] объекта.
 #### Использование imagePullSecrets
 
+Поле `imagePullSecrets` это список ссылок к Secret объектам в этом же [[namespase]]. Вы можете использовать `imagePullSecrets` для передачи Secret объекта, что содержит пароль реестра образов Docker (или других) для kubelet.  Kubelet использует эту информацию для получения приватного образа  от имени вашего [[Pod]] объекта. Для подробной информации относительно поля `imagePullSecrets` смотрите [PodSpec API](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#podspec-v1-core). 
+##### Указание imagePullSecret вручную
 
+Вы можете узнать как указывать `imagePullSecrets` из документации [[Images#Specifying imagePullSecrets on a Pod|container images]].
+##### Организация автоматического прикрепления imagePullSecrets 
+
+Вы можете вручную создать `imagePullSecrets` и ссылаться на них из [[Authenticating#Service account tokens|ServiceAccount]]. Любые созданные [[Pod]] объекты с этим [[Authenticating#Service account tokens|ServiceAccount]] или созданные с [[Authenticating#Service account tokens|ServiceAccount]] по умолчанию, будут получать их поле `imagePullSecrets` установленное в том [[Authenticating#Service account tokens|ServiceAccount]]. Смотрите [[Configure Service Accounts for Pods#Add ImagePullSecrets to a service account]] для подробного объяснения этого процесса.
 ### Using Secrets with static Pods
+
+Вы не можете использовать [[ConfigMap]] объекты или Secret объекты со [[Create static Pods|статичными Pod объектами]]. 
 ## Immutable Secrets
+
+> [!NOTE]
+> FEATURE STATE: Kubernetes v1.21 \[stable\]
+
+Kubernetes позволяет вам маркировать указанные Secret объекты (и [[ConfigMap]] объекты) как *неизменяемые*. Препятствующий изменению данных существующих Secret объектов имеющие следующие достоинства:
+- Защита вас от случайных (или нежелательных) обновлений которые могут причинить перебои в работе приложений.
+- (для кластеров которые широко используют Secret объекты - по крайней мере десятки тысяч уникальных Secret объектов для монтирования в [[Pod]] объектах) переключение к неизменяемым Secret объектам улучшает производительность вашего кластера существенно сокращая нагрузку на kube-apiserver. Kubelet не нуждается в 
 ### Marking a Secret as immutable
 ## Information security for Secrets
 ### Configure least-privilege access to Secrets
