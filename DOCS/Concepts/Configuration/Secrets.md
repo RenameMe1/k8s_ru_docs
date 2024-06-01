@@ -22,7 +22,7 @@ Secret объекты аналогичны [[ConfigMap]] объектам, но 
 >
 >Дополнительные рекомендации по управлению и повышению безопасности ваших Secret объектов, смотрите в [[Good practices for Kubernetes Secrets]]
 
-Смотрите [[Secret#Information security for Secrets|информационная безопасность для Secret]] для более подробной информации.
+Смотрите [[Secrets#Information security for Secrets|информационная безопасность для Secret]] для более подробной информации.
 
 ## Использования Secrets объекта
 
@@ -83,8 +83,8 @@ spec:
 Прежде чем использовать Secret объект для защиты конфиденциальной информации, вы можете выбрать из альтернатив.
 
 Здесь некоторые ваши варианты:
-- Если ваши облачные компоненты в аутентификации в другом приложении и вы знаете, что оно запущено в пределах этого же Kubernetes кластера, вы можете использовать [[Authenticating#Service account tokens|ServiceAccount]] и его токен для идентификации вашего клиента.
-- Есть сторонние инструменты, которые вы можете запустить в пределах или снаружи вашего кластера, которые будут управлять чувствительными данными. Для примера, служба к которой [[Pod]] получают доступ через HTTPS, которая раскрывает Secret объект если клиент корректно прошел аутентификацию (для примера, с [[Authenticating#Service account tokens|ServiceAccount]])
+- Если ваши облачные компоненты в аутентификации в другом приложении и вы знаете, что оно запущено в пределах этого же Kubernetes кластера, вы можете использовать [[Service Accounts]] и его токен для идентификации вашего клиента.
+- Есть сторонние инструменты, которые вы можете запустить в пределах или снаружи вашего кластера, которые будут управлять чувствительными данными. Для примера, служба к которой [[Pod]] получают доступ через HTTPS, которая раскрывает Secret объект если клиент корректно прошел аутентификацию (для примера, с [[Service Accounts]])
 - Для аутентификации, вы можете реализовать собственный подписчик для сертификатов X.509 и использовать [[Certificates and Certificate Signing Requests|CertificateSigningRequests]], что бы позволить собственному подписчику выдавать сертификаты для [[Pod]] который в них нуждаются
 - Вы можете использовать [[Device Plugins]] для предоставления аппаратного обеспечения для шифрования на локальной [[Nodes]] для указанных [[Pod]]. Для примера, мы можете запланировать доверенные [[Pod]] на узлах, которые предоставляют  Trusted Platform Module, настроенный вне группы.
 
@@ -132,20 +132,20 @@ empty-secret   Opaque   0      2m6s
 Колонка `DATA` показывает количество элементов данных в Secret объекте. В этом случае, `0` означает, что вы создали пустой Secret объект.
 ### Secrets объект ServiceAccount токена
 
-Тип Secret объекта `kubernetes.io/service-account-token` используется для хранения токена учетных данных идентифицирующий [[Authenticating#Service account tokens|ServiceAccount]]. Это устаревший механизм, который предоставляет долго живущие учетные данные [[Authenticating#Service account tokens|ServiceAccount]] для [[Pod]].
+Тип Secret объекта `kubernetes.io/service-account-token` используется для хранения токена учетных данных идентифицирующий [[Аутентификация#Service account tokens|ServiceAccount]]. Это устаревший механизм, который предоставляет долго живущие учетные данные [[Аутентификация#Service account tokens|ServiceAccount]] для [[Pod]].
 
-В Kubernetes v1.22 и позднее, рекомендуемый подход - получение короткоживущих, автоматически сменяющийся токен [[Authenticating#Service account tokens|ServiceAccount]] используемый вместо [[TokenRequest]]. Вы можете получить эти короткоживущие токены использующие следующие методы:
+В Kubernetes v1.22 и позднее, рекомендуемый подход - получение короткоживущих, автоматически сменяющийся токен [[Аутентификация#Service account tokens|ServiceAccount]] используемый вместо [[TokenRequest]]. Вы можете получить эти короткоживущие токены использующие следующие методы:
 - Вызывает API `TokenRequest` напрямую или используя API клиент например как `kubectl`. Для примера: вы можете использовать команду [`kubectl create token`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#-em-token-em-).
 - Запросите смонтированный токен в [[Managing Service Accounts#Bound service account token volume mechanism|projected volume]] вашего [[Pod]] манифеста. Kubernetes создает токен и монтирует его в [[Pod]]. Токен автоматически признается не действительным когда [[Pod]] в который он смонтирован удален. Подробности смотри в [[Configure Service Accounts for Pods#Launch a Pod using service account token projection|Запуск Pod используя  service account token проекцию токена сервисного аккаунта]] 
 
 > [!NOTE]
 > Вы должны создать ServiceAccount токен Secret, только если вы не можете использовать API `TokenRequest` для получения токена и угрозы безопасности, связанной с сохранением учетных данных токена, срок действия которых не истекает в API объекте доступном вам для чтения.
 
-Когда вы используете тип Secret объекта, вам необходимо убедиться что аннотация `kubernetes.io/service-account.name` установлена на существующее имя [[Authenticating#Service account tokens|ServiceAccount]]. Если вы создаете и [[Authenticating#Service account tokens|ServiceAccount]] и Secret объекты, вы должны создать первым объектом [[Authenticating#Service account tokens|ServiceAccount]]. 
+Когда вы используете тип Secret объекта, вам необходимо убедиться что аннотация `kubernetes.io/service-account.name` установлена на существующее имя [[Аутентификация#Service account tokens|ServiceAccount]]. Если вы создаете и [[Аутентификация#Service account tokens|ServiceAccount]] и Secret объекты, вы должны создать первым объектом [[Аутентификация#Service account tokens|ServiceAccount]]. 
 
 После создания Secret объекта, Kubernetes [[Controllers|контроллер]] заполнит некоторые другие поля аннотацией `kubernetes.io/service-account.uid` и `token` ключ в поле `data`, который заполняется токеном аутентификации.
 
-Для следующем примере конфигурация заявляет [[Authenticating#Service account tokens|ServiceAccount]] токен в Secret объекте
+Для следующем примере конфигурация заявляет [[Аутентификация#Service account tokens|ServiceAccount]] токен в Secret объекте
 
 ```yaml
 apiVersion: v1
@@ -479,21 +479,54 @@ spec:
 Вы можете узнать как указывать `imagePullSecrets` из документации [[Images#Specifying imagePullSecrets on a Pod|container images]].
 ##### Организация автоматического прикрепления imagePullSecrets 
 
-Вы можете вручную создать `imagePullSecrets` и ссылаться на них из [[Authenticating#Service account tokens|ServiceAccount]]. Любые созданные [[Pod]] объекты с этим [[Authenticating#Service account tokens|ServiceAccount]] или созданные с [[Authenticating#Service account tokens|ServiceAccount]] по умолчанию, будут получать их поле `imagePullSecrets` установленное в том [[Authenticating#Service account tokens|ServiceAccount]]. Смотрите [[Configure Service Accounts for Pods#Add ImagePullSecrets to a service account]] для подробного объяснения этого процесса.
-### Using Secrets with static Pods
+Вы можете вручную создать `imagePullSecrets` и ссылаться на них из [[Service Accounts]]. Любые созданные [[Pod]] объекты с этим [[Service Accounts]] или созданные с [[Service Accounts]] по умолчанию, будут получать их поле `imagePullSecrets` установленное в том [[Service Accounts]]. Смотрите [[Configure Service Accounts for Pods#Add ImagePullSecrets to a service account]] для подробного объяснения этого процесса.
+### Использование Secret объектов  с  статическими Pod объектами
 
 Вы не можете использовать [[ConfigMap]] объекты или Secret объекты со [[Create static Pods|статичными Pod объектами]]. 
-## Immutable Secrets
+## Неизменяемые Secret объекты
 
 > [!NOTE]
 > FEATURE STATE: Kubernetes v1.21 \[stable\]
 
 Kubernetes позволяет вам маркировать указанные Secret объекты (и [[ConfigMap]] объекты) как *неизменяемые*. Препятствующий изменению данных существующих Secret объектов имеющие следующие достоинства:
 - Защита вас от случайных (или нежелательных) обновлений которые могут причинить перебои в работе приложений.
-- (для кластеров которые широко используют Secret объекты - по крайней мере десятки тысяч уникальных Secret объектов для монтирования в [[Pod]] объектах) переключение к неизменяемым Secret объектам улучшает производительность вашего кластера существенно сокращая нагрузку на kube-apiserver. Kubelet не нуждается в 
+- (для кластеров которые широко используют Secret объекты - по крайней мере десятки тысяч уникальных Secret объектов для монтирования в [[Pod]] объектах) переключение к неизменяемым Secret объектам улучшает производительность вашего кластера существенно сокращая нагрузку на kube-apiserver. Kubelet не нуждается в монтировании \[watch] на любой Secret объект который помечен как неизменяемый.  
 ### Marking a Secret as immutable
-## Information security for Secrets
-### Configure least-privilege access to Secrets
-## What's next
 
+Вы можете создать неизменяемый Secret настройкой поля `immutable` в значение `true`. Для примера:
 
+```yaml
+apiVersion: v1
+kind: Secret
+metadata: ...
+data: ...
+immutable: true
+```
+
+Вы можете так же обновить любой существующий изменяемый Secret объект для того, что бы сделать его неизменяемым. 
+
+> [!NOTE]
+> Как-только Secret объект и [[ConfigMap]] помечены как неизменяемые, это изменение не возможно вернуть ни видоизменить контент в поле `data`. Вы можете только удалить и пересоздать Secret объект. Существующие [[Pod]] объекты сохраняют точку монтирования удаленных Secret объектов - они рекомендованы для пересоздания в этих [[Pod]] объектах.  
+## Информационная безопасность  для Secrets объектов
+
+Хотя [[ConfigMap]] и Secret объекты работают аналогично, Kubernetes применяет некоторую дополнительную защиту для Secret объектов.
+
+Secret объект часто держат значения, которые охватывают весь спектр важности, многие из которых могут быть причиной эскалации в пределах Kubernetes (например токен учетной записи сервиса) и во внешних системах. Даже если отдельное приложение может предполагать о важности Secret объектов, с которыми оно ожидает взаимодействовать, другие приложения в пределах того же [[namespase]] могут оказывать эти предположения недействительными.
+
+Secret объект передается только на [[Nodes]] если [[Pod]] объект на этой [[Nodes]] зависит от него. Для монтирования Secret объектов в [[Pod]] объекты, kubelet хранит копии данных в `tmpfs` так, что конфиденциальная информация не записывается в долговременное хранилище. Как только [[Pod]] объект который зависит от Sercret объекта удален, kubelet удаляет свою локальную копию конфиденциальной информации из Secret объекта.
+
+Может быть несколько контейнеров в [[Pod]] объекте. По умолчанию, контейнеры определенные вами имеют доступ только к стандартному [[Service Accounts]] и со связанным с ним  Secret объектом. Вы должны  явно определить переменные окружения или сопоставить том внутрь контейнера что бы предоставить доступ к любому другому Secret объекту.
+
+Могут быть Secret объекты для нескольких [[Pod]] объектов на том же [[Nodes]]. Однако, только Secret объекты, которые запросил [[Pod]] объект потенциально видимы в пределах его контейнеров. Следовательно, один [[Pod]] объект не имеет доступа к Secrtet объекта других [[Pod]] объектов.
+### Настройка наименьших привилегий доступа к Secret объектам
+
+Для усиления мер безопасности вокруг Secret объекта, Kubernetes предоставляет механизм: вы можете снабдить комментариями [[Service Accounts]] как `kubernetes.io/enforce-mountable-secrets: "true"`
+
+Для более подробной информации, вы можете обратиться к [[Service Accounts|документации о этом комментарии]]
+## Что дальше?
+
+- Для методических рекомендация по управлению и улучшению безопасности ваших Secret объектов, обратитесь к [[Good practices for Kubernetes Secrets]]
+- Узнайте как [[Managing Secrets using kubectl|управлять Secret объектами  используя `kubectl`]]
+- Узнайте как [[Managing Secrets using Configuration File|управлять Secret объектами используя конфигурационный файл]]
+- Узнайте как [[Managing Secrets using Kustomize|управлять Seceret объектами используя kustomize ]]
+- Читайте [[Secret|Справочник API]] для `Secret` объекта
